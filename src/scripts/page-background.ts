@@ -58,10 +58,12 @@ class PageBackground {
 		overlayCanvas.height = this.height;
 
 		// Set the primary color to the first color in the theme
-		this.primaryRgb = window
+		const computedColor = window
 			.getComputedStyle(document.documentElement)
 			.getPropertyValue("--primary-rgb")
 			.trim();
+
+		this.primaryRgb = computedColor || "0, 188, 212";
 
 		this.initBackground();
 
@@ -277,32 +279,14 @@ class PageBackground {
 }
 
 /**
- * Loads the Geist Mono font cleanly, falling back safely if already loaded or failing.
- */
-async function loadFont() {
-	const rawBaseUrl = import.meta.env.BASE_URL;
-	const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`;
-	const fontUrl = `${baseUrl}fonts/GeistMono.woff2`;
-
-	try {
-		const isAlreadyLoaded = document.fonts.check("1em Geist Mono");
-		if (isAlreadyLoaded) return;
-
-		const font = new FontFace("Geist Mono", `url(${fontUrl})`);
-		const loadedFont = await font.load();
-		document.fonts.add(loadedFont);
-	} catch (e) {
-		console.warn("Could not load Geist Mono font via FontFace API, falling back to CSS/default font:", e);
-	}
-}
-
-/**
- * First loads/verifies the Geist Mono font, then initializes the background.
+ * Initializes the canvas safely after document fonts are ready.
  */
 async function initializeBackground() {
-	await loadFont();
-
-	await document.fonts.ready.catch(() => {});
+	try {
+		await document.fonts.ready;
+	} catch (e) {
+		console.warn("Could not wait for fonts.ready:", e);
+	}
 
 	const canvas = document.getElementById("bg-canvas") as HTMLCanvasElement;
 	const overlayCanvas = document.getElementById(
