@@ -27,12 +27,12 @@ const { title, description, image, pagefindIgnore, article } = Astro.props;
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-    <link rel="preload" href={`${baseUrl}fonts/Geist.woff2`} as="font" type="font/woff2" crossorigin="">
-    <link rel="preload" href={`${baseUrl}fonts/GeistMono.woff2`} as="font" type="font/woff2" crossorigin="">
+    <link rel="preload" href={`${import.meta.env.BASE_URL}fonts/Geist.woff2`} as="font" type="font/woff2" crossorigin="">
+    <link rel="preload" href={`${import.meta.env.BASE_URL}fonts/GeistMono.woff2`} as="font" type="font/woff2" crossorigin="">
 
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href={`${baseUrl}favicon.svg`} />
+		<link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
 		<meta name="generator" content={Astro.generator} />
 
 		<title>{title}</title>
@@ -43,7 +43,7 @@ const { title, description, image, pagefindIgnore, article } = Astro.props;
 
 		<meta name="og:title" content={title} />
 		{description && <meta name="og:description" content={description} />}
-		<meta name="og:image" content={image?.src || `${baseUrl}img/og.png`} />
+		<meta name="og:image" content={image?.src || `${import.meta.env.BASE_URL}img/og.png`} />
 		<meta name="og:url" content={Astro.site} />
 		{!article && <meta name="og:type" content="website" />}
 		<meta name="og:locale" content="en" />
@@ -65,7 +65,7 @@ const { title, description, image, pagefindIgnore, article } = Astro.props;
 		)}
 		<meta name="twitter:title" content={title} />
 		{description && <meta name="twitter:description" content={description} />}
-		<meta name="twitter:image" content={image?.src || `${baseUrl}img/og.png`} />
+		<meta name="twitter:image" content={image?.src || `${import.meta.env.BASE_URL}img/og.png`} />
 	</head>
 	<body>
 		<main data-pagefind-ignore={pagefindIgnore}>
