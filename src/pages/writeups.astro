@@ -7,6 +7,9 @@ import Card from "../components/Card.astro";
 import Icon from "../components/Icon.astro";
 import Layout from "../layouts/Layout.astro";
 
+const rawBaseUrl = import.meta.env.BASE_URL;
+const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`;
+
 const posts = await getCollection("writeups", (post) => post.data.draft !== true);
 const tags = posts.flatMap((post) => post.data.tags.map((tag) => tag.id));
 ---
@@ -23,7 +26,7 @@ const tags = posts.flatMap((post) => post.data.tags.map((tag) => tag.id));
           <li>
             <a
               class="writeups-tag"
-              href="/writeups"
+              href={`${baseUrl}writeups`}
               data-tag={tag}
             >
               {tag}
@@ -41,7 +44,7 @@ const tags = posts.flatMap((post) => post.data.tags.map((tag) => tag.id));
 			</div>
 			<div class="content-container">
 				{posts.sort((a, b) => b.data.createdAt.getTime() - a.data.createdAt.getTime()).map((post) => (
-					<a href={`/writeups/${post.id}`} class="post-container" data-tags={post.data.tags.map((tag) => tag.id).join(",")}>
+					<a href={`${baseUrl}writeups/${post.id}`} class="post-container" data-tags={post.data.tags.map((tag) => tag.id).join(",")}>
 						<div class="post-header">
 							<h3>{post.data.title}</h3>
 							<span class="post-date">{post.data.createdAt.toLocaleDateString()}</span>
