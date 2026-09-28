@@ -3,7 +3,8 @@ import { name } from "spectre:globals";
 import Icon from "./Icon.astro";
 
 const path = Astro.url.pathname;
-const baseUrl = import.meta.env.BASE_URL;
+const rawBaseUrl = import.meta.env.BASE_URL;
+const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`;
 ---
 <nav>
   <a class="site-title" href={baseUrl}>{name}</a>
@@ -123,8 +124,12 @@ const baseUrl = import.meta.env.BASE_URL;
 
       const data = await result.data();
       
+      const resultUrl = data.url.startsWith('/')
+        ? `${baseUrl}${data.url.slice(1)}`
+        : data.url;
+
       searchResultHtml += `
-        <a href="${data.url}">
+        <a href="${resultUrl}">
           <h3 class="no-mt">${data.meta.title}</h3>
           <p>${data.excerpt}</p>
         </a>
