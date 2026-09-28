@@ -2,7 +2,7 @@
 title: "Unit42"
 description: "In this very easy Sherlock, you will familiarize yourself with Sysmon logs and various useful EventIDs for identifying and analyzing malicious activities on a Windows system."
 image: "../assets/sherlocks_htb_cover.webp"
-createdAt: 28-09-2026
+createdAt: 09-28-2026
 draft: false
 tags:
   - HackTheBox
