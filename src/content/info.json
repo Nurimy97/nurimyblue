@@ -1,0 +1,19 @@
+[
+	{
+		"id": 1,
+		"icon": {
+			"type": "lucide",
+			"name": "shield"
+		},
+		"text": "SOC Analyst"
+	},
+	{
+		"id": 2,
+		"icon": {
+			"type": "lucide",
+			"name": "flag"
+		},
+		"type": "lucide",
+		"text": "Spain"
+	}
+]

@@ -1,0 +1,20 @@
+[
+	{
+		"id": 1,
+		"icon": {
+			"type": "lucide",
+			"name": "github"
+		},
+		"text": "GitHub",
+		"link": "https://github.com/Nurimy97/"
+	},
+  {
+    "id": 2,
+    "icon": {
+      "type": "lucide",
+      "name": "linkedin"
+    },
+    "text": "LinkedIn",
+    "link": "https://www.linkedin.com/in/sebastia-mosquera-redondo-5029bb3a5"
+  }
+]

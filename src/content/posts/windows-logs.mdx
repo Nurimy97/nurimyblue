@@ -1,0 +1,138 @@
+---
+title: "Windows Event Logs Cheat Sheet"
+description: "A list of common event IDs and its descriptions."
+image: "../assets/bash_cover.webp"
+createdAt: "2026-06-02"
+date: 05-13-2026
+draft: false
+tags:
+  - Python
+  - CLI
+  - Tools
+---
+## System Logs
+
+| Event ID | Description                      | Details                                                                                                                                                                                                                 |
+| -------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1074** | **System Shutdown/Restart**           | Monitors system shutdowns or restarts, potentially revealing unexpected activities such as malware infection or unauthorized access.                                                                                        |
+| **6005** | **The Event log service was started** | Marks the start of the Event Log Service, often indicating a system boot-up for investigating system performance or potential security incidents around that period, and can be used to detect unauthorized system reboots. |
+| **6006** | **The Event log service was stopped** | Signals when the Event Log Service was stopped, typically during a system shutdown. Abnormal occurrences could indicate intentional service disruption for covering illicit activities.                                     |
+| **6013** | **Windows uptime**                    | Occurs daily and shows the system's uptime in seconds. A shorter-than-expected uptime could mean a potential reboot, which could signify intrusion or unauthorized activities on the system.                                |
+| **7040** | **Service status change**             | Indicates a change in service startup type, which could be from manual to automatic or vice versa. If a crucial service's startup type is changed, it could be a sign of system tampering.                                  |
+
+
+## Security Logs
+
+### Logon
+
+| Event ID | Description                                          | Details                                                                                                                                                             |
+| -------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **4624** | **Successful Logon**                                 | Records successful logon events, vital for establishing normal user behavior. Abnormal behavior could signify a potential security threat.                           |
+| **4625** | **Failed Logon**                                     | Logs failed logon attempts, and multiple failed attempts could signify a brute-force attack in progress.                                                             |
+| **4648** | **A logon was attempted using explicit credentials** | Triggered when a user logs on with explicit credentials to run a program. Anomalies can indicate lateral movement within a network.                                  |
+| **4672** | **Special Privileges Assigned to a New Logon**       | Logged whenever an account logs on with superuser privileges. Tracking these events helps ensure that superuser privileges are not being abused or used maliciously. |
+
+### Antivirus
+
+| Event ID | Description                                                  | Details                                                                                                                                                                           |
+| -------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1116** | **Antivirus malware detection**                              | Logs when Defender detects malware, and a surge in these events could indicate a targeted attack or widespread malware infection.                                                 |
+| **1118** | **Antivirus remediation activity has started**               | Signals that Defender has begun the process of removing or quarantining detected malware, and it's important to monitor these events to ensure successful remediation activities. |
+| **1119** | **Antivirus remediation activity has succeeded**             | Indicates the success of the remediation process for detected malware, with regular monitoring ensuring identified threats are effectively neutralized.                           |
+| **5001** | **Antivirus real-time protection configuration has changed** | Indicates unauthorized changes to Defender's real-time protection settings, which could indicate an attempt to disable or undermine its functionality.                            |
+
+### Active Directory
+
+| Event ID | Description                                                                    | Details                                                                                                                                                     |
+| -------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **4738** | **A user account was changed**                                                 | Records any changes made to user accounts and unexpected account changes can be a sign of account takeover or insider threats.                              |
+| **4771** | **Kerberos pre-authentication failed**                                         | Similar to 4625 but specifically for Kerberos authentication, an unusual amount could indicate an attacker attempting to brute force your Kerberos service. |
+| **4776** | **The domain controller attempted to validate the credentials for an account** | Helps track both successful and failed attempts at credential validation by the domain controller, with multiple failures suggesting a brute-force attack.  |
+
+### Network Shares (SMB)
+
+| Event ID | Description                                                                                | Details                                                                                                                                                                |
+| -------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **5140** | **A network share object was accessed**                                                    | Logged whenever a network share is accessed, critical for identifying unauthorized access to network shares.                                                           |
+| **5142** | **A network share object was added**                                                       | Signifies the creation of a new network share, with unauthorized network shares potentially used to exfiltrate data or spread malware across a network.                |
+| **5145** | **A network share object was checked to see whether client can be granted desired access** | Indicates that someone attempted to access a network share, frequent checks might indicate a user or malware trying to map out the network shares for future exploits. |
+
+### Scheduled Tasks
+
+| Event ID        | Description                               | Details                                                                                                                                                                |
+| --------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **4698**        | **A scheduled task was created**          | Triggered when a scheduled task is created, helping detect persistence mechanisms used by attackers to maintain access and run malicious code.                      \| |
+| **4700 & 4701** | **A scheduled task was enabled/disabled** | Records the enabling or disabling of a scheduled task, with these logs providing valuable insight into suspicious activities.                                          |
+| **4702**        | **A scheduled task was updated**          | Triggered when a scheduled task is updated and monitoring these updates can help detect changes that may signify malicious intent.                                     |
+
+### Other
+
+| Event ID | Description                                                 | Details                                                                                                                                                                     |
+| -------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1102** | **The audit log was cleared**                               | Clearing the audit log can be a sign of an attempt to remove evidence of an intrusion or malicious activity                                                                 |
+| **4656** | **A handle to an object was requested**                     | Triggered when a handle to an object (like a file, registry key, or process) isrequested and can be useful for detecting attempts to access sensitive resources.            |
+| **4719** | **System audit policy was changed**                         | Records changes to the audit policy on a computer, potentially indicating someone trying to cover their tracks by turning off auditing or changing what events get audited. |
+| **5157** | **The Windows Filtering Platform has blocked a connection** | Logged when the Windows Filtering Platform blocks a connection attempt, helping identify malicious traffic on your network.                                                 |
+| **7045** | **A service was installed in the system**                   | A sudden appearance of unknown services might suggest malware installation, as many types of malware install themselves as services.                                        |
+
+## Sysmon Logs
+
+### Files 
+
+| Event ID | Description                                 | Details                                                                                                                                   |
+| -------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **2**    | **File creation time modification**         | Registered when a file creation time is changed by a process; may indicate malicious activity, but legitimately changed times are common. |
+| **23**   | **FileDelete (File Delete archived)**       | Logs a file deletion and saves the deleted file in the ArchiveDirectory.                                                                  |
+| **11**   | **FileCreate**                              | Logs file create or overwrite operations, especially useful for monitoring autostart locations and temporary directories.                 |
+| **15**   | **FileCreateStreamHash**                    | Logs hashes of named file streams and their contents, aimed at capturing malware configuration settings downloaded via browser.           |
+| **26**   | **FileDeleteDetected (File Delete logged)** | Logs a file deletion.                                                                                                                     |
+| **27**   | **FileBlockExecutable**                     | Blocks the creation of executable files and generates an event.                                                                           |
+| **28**   | **FileBlockShredding**                      | Blocks file shredding from tools such as SDelete and generates an event.                                                                  |
+| **29**   | **FileExecutableDetected**                  | Generates an event when a new executable file (PE format) is detected.                                                                    |
+
+### WMI Events
+
+| Event ID | Description                                    | Details                                                                             |
+| -------- | ---------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **19**   | **WmiEventFilter activity detected**           | When a WMI event filter is registered, used by malware to execute.                  |
+| **20**   | **WmiEventConsumer activity detected**         | Logs registration of WMI consumers and records consumer name, log, and destination. |
+| **21**   | **WmiEventConsumerToFilter activity detected** | When a consumer binds to a filter, recording the consumer name and filter path.     |
+
+### Registry Events
+
+| Event ID | Description                              | Details                                                                                                                                                |
+| -------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **12**   | **RegistryEvent (Object create/delete)** | Records key and value create/delete operations in the Registry; useful for monitoring specific malware registry modifications and autostart locations. |
+| **13**   | **RegistryEvent (Value Set)**            | Identifies Registry value modifications, records DWORD and QWORD values written.                                                                       |
+| **14**   | **RegistryEvent (Key/Value Rename)**     | Records key or value renames in the Registry.                                                                                                          |
+
+### Pipes
+
+| Event ID | Description                    | Details                                                                                       |
+| -------- | ------------------------------ | --------------------------------------------------------------------------------------------- |
+| **17**   | **PipeEvent (Pipe Created)**   | Generates when a named pipe is created, often used by malware for interprocess communication. |
+| **18**   | **PipeEvent (Pipe Connected)** | Logs named pipe connections between a client and server.                                      |
+
+### Process/Threads
+
+| Event ID | Description                                 | Details                                                                                                                                       |
+| -------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1**    | **Process creation**                        | Logs newly created processes, includes extended information about the process and full command line.                                          |
+| **5**    | **Process termination**                     | Logs when a process terminates, providing UtcTime, ProcessGuid, and ProcessId of the terminated process.                                      |
+| **6**    | **Driver loaded**                           | Provides information on drivers loaded on the system and hashes and signature information.                                                    |
+| **7**    | **Image loaded**                            | Logs when a module is loaded in a specific process.                                                                                           |
+| **8**    | **CreateRemoteThread**                      | Detects when a process creates a thread in another process; used by malware to inject code and hide in other processes.                       |
+| **9**    | **RawAccessRead**                           | Detects reading operations from the drive using the \\.\ denotation, often used for data exfiltration or avoiding file access auditing tools. |
+| **10**   | **ProcessAccess**                           | Reports when a process opens another process, useful for detecting hacking tools that read memory contents of processes.                      |
+| **25**   | **ProcessTampering (Process image change)** | Logs process hiding techniques such as "hollow" or "herpaderp."                                                                               |
+
+### Other
+
+| Event ID | Description                     | Details                                                                                                                                                              |
+| -------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **3**    | **Network connection**          | Logs TCP/UDP connections on the machine and links to processes through ProcessId and ProcessGuid fields.                                                             |
+| **4**    | **Sysmon service state change** | Reports the state of the Sysmon service (started or stopped).                                                                                                        |
+| **16**   | **ServiceConfigurationChange**  | Logs changes in the Sysmon configuration - for example when filtering rules are updated.                                                                             |
+| **22**   | **DNS query**                   | Generated when a process executes a DNS query, regardless of whether the result is successful or not.                                                                |
+| **24**   | **ClipboardChange**             | Generated when the system clipboard contents change.                                                                                                                 |
+| **255**  | **Error**                       | Generated when an error occurred within Sysmon, can happen due to heavy system load, bugs in the Sysmon service, or security and integrity conditions not being met. |

@@ -1,0 +1,64 @@
+---
+title: "PsExec Hunt"
+description: "Analyze SMB traffic in a PCAP file using Wireshark to identify PsExec lateral movement, compromised systems, user credentials, and administrative shares."
+image: "../assets/cyberdefenders_cover.webp"
+createdAt: 05-09-2026
+draft: false
+tags:
+  - CyberDefenders 
+  - DFIR
+---
+
+***
+## Scenario
+
+An alert from the Intrusion Detection System (IDS) flagged suspicious lateral movement activity involving PsExec. This indicates potential unauthorized access and movement across the network. As a SOC Analyst, your task is to investigate the provided PCAP file to trace the attacker’s activities. Identify their entry point, the machines targeted, the extent of the breach, and any critical indicators that reveal their tactics and objectives within the compromised environment.
+
+***
+## Questions
+### Question 1
+- To effectively trace the attacker's activities within our network, can you identify the IP address of the machine from which the attacker initially gained access?
+
+The attacker's activities must generate a high traffic volume, so in wireshark's `Statistics > Conversations` the host can be easily found. If wireshark shows MAC adresses instead of IPs, following the conversation with `Find > Selected A <> B` the entire attack including the Ip will be displayed.
+
+### Question 2 
+- To fully understand the extent of the breach, can you determine the machine's hostname to which the attacker first pivoted?
+
+In the SMB protocol communication, the ntlm challenge shows the hostnames. The filter looks for the ntml challenge in conjunction with the attacker's IP. 
+```ruby
+ip.addr == 10.0.0.x && ntlmssp.challenge.target_name
+```
+
+>The NTLM Challenge is a security mechanism used by SMB for authentication, involving a challenge-response process with hashed values. It helps secure file sharing and network operations in Windows networks.
+
+From **Session Setup Response** in `SMB2 > Session Security Reponse > Security Blob > NTLM Secure Service Provider >Target Name` the hostname is displayed.
+### Question 3 
+- Knowing the username of the account the attacker used for authentication will give us insights into the extent of the breach. What is the username utilized by the attacker for authentication?
+
+The user can be found in the NTLM authentication process.
+```ruby
+ip.addr == 10.0.0.130 && ntlmssp.auth.username
+```
+### Question 4
+- After figuring out how the attacker moved within our network, we need to know what they did on the target machine. What's the name of the service executable the attacker set up on the target?
+
+To install a new service a file must be uploaded to the server. The file can be found in `File > Export Objects > SMB`.
+
+### Question 5
+- We need to know how the attacker installed the service on the compromised machine to understand the attacker's lateral movement tactics. This can help identify other affected systems. Which network share was used by PsExec to install the service on the target machine? 
+
+In the smb traffic should be multiple requests coming from the same share using Psexec.
+```ruby
+smb2.tree
+```
+### Question 6
+- We must identify the network share used to communicate between the two machines. Which network share did PsExec use for communication?
+
+This share can be found filtering with the same filter from question 6.
+### Question 7
+- Now that we have a clearer picture of the attacker's activities on the compromised machine, it's important to identify any further lateral movement. What is the hostname of the second machine the attacker targeted to pivot within our network?
+
+In the *NTLMSSP_CHALLENGE* the hostname can be found in `Target Name` or `NetBIOS Computer Name` using the same filter from the Question 2: 
+```ruby
+ntlmssp.challenge.target_name
+```
