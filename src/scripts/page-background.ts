@@ -30,6 +30,7 @@ class PageBackground {
 	private letterInstances: LetterInstance[] = [];
 
 	private primaryRgb: string;
+	private animFrameId: number | null = null;
 
 	/**
 	 * Initializes the background on the page.
@@ -67,19 +68,22 @@ class PageBackground {
 
 		this.initBackground();
 
-		requestAnimationFrame(this.redrawBackground);
+		this.animFrameId = requestAnimationFrame(this.redrawBackground);
 	}
 
 	/**
 	 * Sets up the background canvases. The text is decided based on the title of the page.
 	 */
 	private initBackground = () => {
-		let text: string =
-			document.title.toLowerCase().split(" | ")[0].replace(/\s/g, "_") ||
-			"spectre";
+		let rawTitle = document.title ? document.title.toLowerCase().split(" | ")[0].trim() : "";
+		let text: string = rawTitle.replace(/\s+/g, "_");
 
-		// Add additional underscore to separate words
-		if (text.includes("_")) {
+		// Fallback por si la página index o los artículos no tienen título renderizado aún
+		if (!text || text.length === 0) {
+			text = "spectre";
+		}
+
+		if (!text.endsWith("_")) {
 			text += "_";
 		}
 
@@ -247,7 +251,7 @@ class PageBackground {
 			this.overlayCtx.fillText(letter.letter, letter.x, letter.y);
 		}
 
-		requestAnimationFrame(this.redrawBackground);
+		this.animFrameId = requestAnimationFrame(this.redrawBackground);
 	};
 
 	/**
@@ -278,6 +282,8 @@ class PageBackground {
 	};
 }
 
+let currentBackground: PageBackground | null = null;
+
 /**
  * Initializes the canvas safely after document fonts are ready.
  */
@@ -295,11 +301,16 @@ async function initializeBackground() {
 
 	if (!canvas || !overlayCanvas) return;
 
-	const background = new PageBackground(canvas, overlayCanvas);
-
-	window.addEventListener("resize", () => {
-		background.resizeBackground();
-	});
+	// Reinicializamos el background para cambios de página o navegaciones
+	currentBackground = new PageBackground(canvas, overlayCanvas);
 }
 
+// Escucha tanto la carga inicial como los cambios de ruta/navegaciones
 initializeBackground();
+document.addEventListener("astro:page-load", initializeBackground);
+
+window.addEventListener("resize", () => {
+	if (currentBackground) {
+		currentBackground.resizeBackground();
+	}
+});
