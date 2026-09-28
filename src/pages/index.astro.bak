@@ -9,9 +9,6 @@ import Icon from "../components/Icon.astro";
 import ImageGlow from "../components/ImageGlow.astro";
 import Layout from "../layouts/Layout.astro";
 
-const rawBaseUrl = import.meta.env.BASE_URL;
-const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`;
-
 const [posts, writeups, projects, about, workExperience, quickInfo, socials] =
 	await Promise.all([
     getCollection("posts", (post) => post.data.draft !== true),
@@ -116,7 +113,7 @@ const { Content: About } = await render(about!);
 						)
 						.slice(0, 2)
 						.map((post) => (
-							<a href={`${baseUrl}blog/${post.id}`} class="post-container">
+							<a href={`/blog/${post.id}`} class="post-container">
 								<div class="post-header">
 									<h3>{post.data.title}</h3>
 									<span class="post-date">
@@ -148,7 +145,7 @@ const { Content: About } = await render(about!);
 						)
 						.slice(0, 2)
 						.map((post) => (
-							<a href={`${baseUrl}writeups/${post.id}`} class="post-container">
+							<a href={`/writeups/${post.id}`} class="post-container">
 								<div class="post-header">
 									<h3>{post.data.title}</h3>
 									<span class="post-date">
@@ -178,7 +175,7 @@ const { Content: About } = await render(about!);
 						.sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
 						.slice(0, 2)
 						.map((project) => (
-							<a href={`${baseUrl}projects/${project.id}`} class="post-container">
+							<a href={`/projects/${project.id}`} class="post-container">
 								<div class="post-header">
 									<h3>{project.data.title}</h3>
 									<span class="post-date">
