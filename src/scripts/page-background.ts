@@ -277,30 +277,39 @@ class PageBackground {
 }
 
 /**
- * Loads the Geist Mono font. We have to do this asynchronously because the font is not preloaded.
+ * Loads the Geist Mono font cleanly, falling back safely if already loaded or failing.
  */
 async function loadFont() {
-
-  const rawBaseUrl = import.meta.env.BASE_URL;
+	const rawBaseUrl = import.meta.env.BASE_URL;
 	const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`;
-	
-	const font = new FontFace("Geist Mono", `url(${baseUrl}fonts/GeistMono.woff2)`);
+	const fontUrl = `${baseUrl}fonts/GeistMono.woff2`;
 
-	await font.load();
+	try {
+		const isAlreadyLoaded = document.fonts.check("1em Geist Mono");
+		if (isAlreadyLoaded) return;
 
-	document.fonts.add(font);
+		const font = new FontFace("Geist Mono", `url(${fontUrl})`);
+		const loadedFont = await font.load();
+		document.fonts.add(loadedFont);
+	} catch (e) {
+		console.warn("Could not load Geist Mono font via FontFace API, falling back to CSS/default font:", e);
+	}
 }
 
 /**
- * First loads the Geist Mono font, then initializes the background.
+ * First loads/verifies the Geist Mono font, then initializes the background.
  */
 async function initializeBackground() {
 	await loadFont();
+
+	await document.fonts.ready.catch(() => {});
 
 	const canvas = document.getElementById("bg-canvas") as HTMLCanvasElement;
 	const overlayCanvas = document.getElementById(
 		"overlay-canvas",
 	) as HTMLCanvasElement;
+
+	if (!canvas || !overlayCanvas) return;
 
 	const background = new PageBackground(canvas, overlayCanvas);
 
