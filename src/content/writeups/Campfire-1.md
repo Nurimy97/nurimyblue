@@ -24,7 +24,7 @@ You are provided with:
 
 ***
 
-> In order to have the correct time to answer properly the questions, we must **set the timezone to UTC**. The (Zimmerman's Tools)[https://ericzimmerman.github.io/] are required also.
+> In order to have the correct time to answer properly the questions, we must **set the timezone to UTC**. The [Zimmerman's Tools](https://ericzimmerman.github.io/) are required also.
 
 ### Task 1
 - Analyzing Domain Controller Security Logs, can you confirm the UTC date & time when the kerberoasting activity occurred?
