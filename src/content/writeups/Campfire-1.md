@@ -24,24 +24,24 @@ You are provided with:
 
 ***
 
-> In order to have the correct time to answer properly the questions, we must **set the timezone to UTC**.
+> In order to have the correct time to answer properly the questions, we must **set the timezone to UTC**. The (Zimmerman's Tools)[https://ericzimmerman.github.io/] are required also.
 
 ### Task 1
 - Analyzing Domain Controller Security Logs, can you confirm the UTC date & time when the kerberoasting activity occurred?
 
-Filter by `Event ID 4769 ( A Kerberos service ticket was requested )` and look for `0x17` in **Find..**. The first match is the response.
+Filter by `Event ID 4769` ( A Kerberos service ticket was requested ) and look for `0x17` in **Find..**. The first match is the response.
 ### Task 2
 - What is the Service Name that was targeted?
 
-The 'service name' from Task 1 event.
+The **service name** from Task 1 event.
 ### Task 3
 - It is really important to identify the Workstation from which this activity occurred. What is the IP Address of the workstation? 
 
-'Client address' from Task 1 event..
+**Client address** from Task 1 event..
 ### Task 4
 - Now that we have identified the workstation, a triage including PowerShell logs and Prefetch files are provided to you for some deeper insights so we can understand how this activity occurred on the endpoint. What is the name of the file used to Enumerate Active directory objects and possibly find Kerberoastable accounts in the network?
 
-Look for 'Event ID 4104 ( PowerShell Script Block Logging )'  in the Powershell Operational logs.
+Look for `Event ID 4104` ( PowerShell Script Block Logging )  in the Powershell Operational logs.
 
 ### Task 5
 -When was this script executed? (UTC)
@@ -52,7 +52,7 @@ From the events from Task 4, the first event is a policy execution bypass in ord
 
 First we must parse the prefetch files with `Eric Zimmerman's PECmd` to convert them into csv and then open it with Timeline explorer.
 
-``` PowerShell
+``` ruby
 .\PECmd.exe -d "C:\Users\Nurimy\Downloads\Triage\Workstation\2024-05-21T033012_triage_asset\C\Windows\prefetch\" --csv C:\Users\Nurimy\Desktop\ --csvf result.csv
 ```
 

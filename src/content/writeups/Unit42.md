@@ -28,7 +28,7 @@ To answer the questions in this lab, you will only need the Event Viewer, with V
 ### Task 1
 -How many Event logs are there with Event ID 11?
 
-Import the Microsoft-Windows-Sysmon-Operational.evtx to Event viewer and filter by `EventID 11` in **Filter Current Log**.
+Import the Microsoft-Windows-Sysmon-Operational.evtx to Event viewer and filter by `EventID 11` ( File Creation ) in **Filter Current Log**.
 ### Task 2
 - Whenever a process is created in memory, an event with Event ID 1 is recorded with details such as command line, hashes, process path, parent process path, etc. This information is very useful for an analyst because it allows us to see all programs executed on a system, which means we can spot any malicious processes being executed. What is the malicious process that infected the victim's system?
 
@@ -36,7 +36,7 @@ With the filter of the Task 1 applied, use **Find..** to look for `Downloads` an
 ### Task 3
 -Which Cloud drive was used to distribute the malware?
 
-Filter by `EventID 22` ( DNS Query )and look for a cloud storage page.
+Filter by `EventID 22` ( DNS Query ) and look for a cloud storage page.
 ### Task 4
 - For many of the files it wrote to disk, the initial malicious file used a defense evasion technique called Time Stomping, where the file creation date is changed to make it appear older and blend in with other files. What was the timestamp changed to for the PDF file?
 
