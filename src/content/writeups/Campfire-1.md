@@ -7,7 +7,7 @@ draft: false
 tags:
   - HackTheBox
   - Very Easy
-  - CDSA Path
+  - CDSA Preparation Path
 ---
 ***
 ## Scenario

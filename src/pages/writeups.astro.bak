@@ -56,7 +56,6 @@ const tags = posts.flatMap((post) => post.data.tags.map((tag) => tag.id));
 		</Card>
   </div>
 </Layout>
-
 <script>
   const tags = document.querySelectorAll<HTMLAnchorElement>('.writeups-tag');
   const posts = document.querySelectorAll<HTMLAnchorElement>('.post-container');
@@ -67,6 +66,7 @@ const tags = posts.flatMap((post) => post.data.tags.map((tag) => tag.id));
   function updatePostsVisibility() {
     posts.forEach((post) => {
       const postTags = post.dataset.tags!.split(',');
+      // if there are selected tags and the post does not have all of them, hide the post
       if (selectedTags.size > 0 && ![...selectedTags].every((tag) => postTags.includes(tag))) {
         post.style.display = 'none';
       } else {
@@ -76,16 +76,12 @@ const tags = posts.flatMap((post) => post.data.tags.map((tag) => tag.id));
   }
 
   function updateURL() {
-    // Preserva el pathname exacto (incluyendo la subruta /nurimyblue/writeups)
-    const newUrl = new URL(window.location.href);
-    
+    // create a "clean" URL for the current page before adding the new query parameters
+    const newUrl = new URL(window.location.pathname, window.location.origin);
     if (selectedTags.size > 0) {
       newUrl.searchParams.set('tags', [...selectedTags].join(','));
-    } else {
-      newUrl.searchParams.delete('tags');
     }
-    
-    history.pushState({ tags: [...selectedTags] }, '', newUrl.toString());
+    history.pushState({ tags: [...selectedTags] }, '', newUrl);
   }
 
   tags.forEach((tag) => {
