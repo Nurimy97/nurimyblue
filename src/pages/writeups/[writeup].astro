@@ -83,9 +83,7 @@ const { Content, headings } = await render(post);
 					<div class="article-info">
 						<span>{post.data.createdAt.toLocaleDateString()}</span>
 						<span>/</span>
-						<span
-							>{timeToRead(post)} minute{timeToRead(post) === 1 ? "" : "s"} to read</span
-						>
+						<span>{timeToRead(post)} minute{timeToRead(post) === 1 ? "" : "s"} to read</span>
 						<span>/</span>
 						<span>Tags: {post.data.tags.map((tag) => tag.id).join(", ")}</span>
 					</div>
