@@ -9,9 +9,6 @@ import Icon from "../../components/Icon.astro";
 import ImageGlow from "../../components/ImageGlow.astro";
 import Layout from "../../layouts/Layout.astro";
 
-const rawBaseUrl = import.meta.env.BASE_URL;
-const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
-
 interface Props {
 	project: CollectionEntry<"projects">;
 }
@@ -88,7 +85,7 @@ const { Content } = await render(project);
 			</div>
 			<Content />
 			<hr class="end-of-article" />
-			<a href={`${baseUrl}projects`} class="block-link" data-pagefind-ignore
+			<a href="/projects" class="block-link" data-pagefind-ignore
 				>← Back to projects</a
 			>
 		</Card>
