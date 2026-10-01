@@ -9,7 +9,6 @@ import Card from "../../components/Card.astro";
 import ImageGlow from "../../components/ImageGlow.astro";
 import Layout from "../../layouts/Layout.astro";
 
-// Obtenemos la ruta base del repositorio para evitar el 404 en GitHub Pages
 const rawBaseUrl = import.meta.env.BASE_URL;
 const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`;
 
