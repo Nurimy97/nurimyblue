@@ -1,0 +1,70 @@
+---
+title: "RogueOne"
+description: "In this scenario, the Security Information and Event Management (SIEM) system at Forela has detected a series of alerts in a brief period, signaling potential Command and Control (C2) communication originating from an employee, Simon Stark's, workstation."
+image: "../assets/sherlocks_htb_cover.webp"
+createdAt: 10-03-2026
+draft: false
+tags:
+  - HackTheBox
+  - Very Easy
+  - CDSA Path
+---
+## Scenario
+Your SIEM system generated multiple alerts in less than a minute, indicating potential C2 communication from Simon Stark's workstation. Despite Simon not noticing anything unusual, the IT team had him share screenshots of his task manager to check for any unusual processes. No suspicious processes were found, yet alerts about C2 communications persisted. The SOC manager then directed the immediate containment of the workstation and a memory dump for analysis. As a memory forensics expert, you are tasked with assisting the SOC team at Forela to investigate and resolve this urgent incident.
+
+***
+
+### Task 1
+- Please identify the malicious process and confirm process id of malicious process.
+
+Taking a look with the **windows.cmdline** we'll see a suspicious svchost.exe executing from `Downloads`.
+```ruby
+.\volatility3.exe -f C:\Users\Nurimy\Desktop\20230810.mem windows.cmdline
+```
+### Task 2
+- The SOC team believe the malicious process may spawned another process which enabled threat actor to execute commands. What is the process ID of that child process?
+
+Use the **windows.pslist** plugin and filter for the Process ID from Task 1.
+```ruby
+.\volatility3.exe -f C:\Users\Nurimy\Desktop\20230810.mem windows.pslist  | findstr "6812"
+```
+### Task 3
+- The reverse engineering team need the malicious file sample to analyze. Your SOC manager instructed you to find the hash of the file and then forward the sample to reverse engineering team. Whats the md5 hash of the malicious file?
+
+First we must dump the file from the memory dump with the next command
+
+```ruby
+.\volatility3.exe -f C:\Users\Nurimy\Desktop\20230810.mem -o C:\Users\Nurimy\Desktop\dumpfiles windows.dumpfiles --pid 6812
+```
+Then go to the dump directory and filter by svchost.exe.
+```ruby
+ ls | findstr svchost.exe
+```
+And get the hash.
+```ruby
+Get-Filehash file.0x9e8b91ec0140.0x9e8b957f24c0.ImageSectionObject.svchost.exe.img -Algorithm MD5
+```
+### Task 4
+- In order to find the scope of the incident, the SOC manager has deployed a threat hunting team to sweep across the environment for any indicator of compromise. It would be a great help to the team if you are able to confirm the C2 IP address and ports so our team can utilise these in their sweep.
+
+Filter  by the pid with **searchstr** in the `windows.netscan` plugin.
+```ruby
+.\volatility3.exe -f C:\Users\Nurimy\Desktop\20230810.mem windows.netscan | findstr "6812"
+```
+### Task 5
+- We need a timeline to help us scope out the incident and help the wider DFIR team to perform root cause analysis. Can you confirm time the process was executed and C2 channel was established?
+
+From the task 4, take the timestamp and adapt the format for the response from YYYY-MM-DD HH:MM:SS to **DD/MM/YYYY HH:MM:SS**.
+### Task 6
+- What is the memory offset of the malicious process?
+
+Go back to the pslilst plugin and take the offset from there. The format is 0x0000000000000.
+```ruby
+.\volatility3.exe -f C:\Users\Nurimy\Desktop\20230810.mem windows.pslist  | findstr "6812"
+```
+
+Take the offset from `svchost.exe`.
+### Task 7
+- You successfully analyzed a memory dump and received praise from your manager. The following day, your manager requests an update on the malicious file. You check VirusTotal and find that the file has already been uploaded, likely by the reverse engineering team. Your task is to determine when the sample was first submitted to VirusTotal.
+
+Put the MD5 hash on virustotal.
