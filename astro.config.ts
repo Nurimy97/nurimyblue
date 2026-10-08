@@ -33,16 +33,16 @@ export default defineConfig({
 			name: "Nurimy's blog",
 			openGraph: {
 				home: {
-					title: 'Spectre',
-					description: 'A minimalistic theme for Astro.',
+					title: "Nurimy Blue",
+					description: "SOC Analyst's den",
 				},
 				blog: {
 					title: 'Blog',
-					description: 'News and guides for Spectre.',
+					description: 'Cheatsheets and more',
 				},
 				writeups: {
 					title: 'Writeups',
-					description: 'News and guides for Spectre.',
+					description: 'Cyberdefenders and HTB Sherlocks writeups',
 				},
 				projects: {
 					title: 'Projects',
