@@ -1,0 +1,147 @@
+---
+title: "Recollection"
+description: "Recollection is an easy difficulty Sherlock where you are tasked with carrying out analysis of a memory dump to understand the actions of an attacker and what else within the environment may have been affected."
+image: "../assets/sherlocks_htb_cover.webp"
+createdAt: 10-05-2026
+draft: false
+tags:
+  - HackTheBox
+  - Very Easy
+  - CDSA Preparation Path
+---
+***
+## Scenario
+A junior member of our security team has been performing research and testing on what we believe to be an old and insecure operating system. We believe it may have been compromised & have managed to retrieve a memory dump of the asset. We want to confirm what actions were carried out by the attacker and if any other assets in our environment might be affected. Please answer the questions below.
+***
+> In this lab we're gonna need volatility 2
+### Task 1
+- What is the Operating System of the machine?
+
+With **volatility 2.6.exe** we're going to execute the imageinfo plugin and in `suggested profiles` is the response.
+```ruby
+.\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin imageinfo
+```
+### Task 2
+- When was the memory dump created?
+
+From the task 1 command, is in `Image date and time`.
+### Task 3
+- After the attacker gained access to the machine, the attacker copied an obfuscated PowerShell command to the clipboard. What was the command?
+
+Now having the suggested profiles from task 1, we're adding the first one. As the question suggest we should look for the clipboard and volatility has a plugin for that.
+```ruby
+.\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin --profile Win7SP1x64 clipboard
+```
+### Task 4
+- The attacker copied the obfuscated command to use it as an alias for a PowerShell cmdlet. What is the cmdlet name?
+
+Executing the powershell command it will echo iex which is an alias for Invoke-Expression.
+
+```ruby
+(gv '*MDR*').naMe[3,11,2]-joIN''
+```
+### Task 5
+- A CMD command was executed to attempt to exfiltrate a file. What is the full command line?
+
+Now with cmdscan, one of the processes of connhost has the answer.
+```ruby
+.\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin --profile Win7SP1x64 cmdscan
+```
+### Task 6
+- Following the above command, now tell us if the file was exfiltrated successfully?
+
+After that type command, the attacker tried to execute a powershell command in base64 but wrote the powershell call wrong. 
+### Task 7
+- The attacker tried to create a readme file. What was the full path of the file?
+
+To see the encoded command, it can be done with the next command in a linux terminal:
+```ruby
+echo "ZWNobyAiaGFja2VkIGJ5IG1hZmlhIiA+ICJDOlxVc2Vyc1xQdWJsaWNcT2ZmaWNlXHJlYWRtZS50eHQi" | base64
+```
+### Task 8
+- What was the Host Name of the machine?
+This one can be archieved by using the `envars` plugin with findstr filtering by `COMPUTERNAME`
+
+```ruby
+.\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin --profile Win7SP1x64 envars | findstr "COMPUTERNAME"
+```
+### Task 9
+- How many user accounts were in the machine?
+
+Dump the hashes with the hashdump pugin and count, excude the one with the "$".
+
+```ruby
+.\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin --profile Win7SP1x64 hashdump
+```
+
+### Task 10
+- In the "\Device\HarddiskVolume2\Users\user\AppData\Local\Microsoft\Edge" folder there were some sub-folders where there was a file named passwords.txt. What was the full file location/path?
+
+Now that we're looking for a file, we're gonna use the `filescan` plugin and filter with the file name.
+
+```ruby
+.\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin --profile Win7SP1x64 filescan | findstr "passwords.txt"
+```
+### Task 11
+- A malicious executable file was executed using command. The executable EXE file's name was the hash value of itself. What was the hash value?
+
+In this one use the `consoles` plugin with a couple of filters.
+
+```ruby
+.\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin --profile Win7SP1x64 consoles | findstr "Cmd" | findstr ".exe"
+```
+### Task 12
+- Following the previous question, what is the Imphash of the malicous file you found above?
+
+Put the filename in virustotal and copy the imphash.
+
+### Task 13
+- Following the previous question, tell us the date in UTC format when the malicious file was created?
+
+In the same page, look for the `Creation Time`.
+
+### Task 14
+- What was the local IP address of the machine?
+
+Use the `netscan` plugin and take the Local Address which starts with 192.
+
+```ruby
+.\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin --profile Win7SP1x64 netscan
+```
+### Task 15
+- There were multiple PowerShell processes, where one process was a child process. Which process was its parent process?
+
+With pstree look for `powershell.exe's PPid` ( Parent PID ).
+
+```ruby
+ .\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin --profile Win7SP1x64 pstree
+```
+
+And now filter the same command with it and take the pid.
+
+```ruby
+ .\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin --profile Win7SP1x64 pstree | findstr "2032"
+```
+
+### Task 16
+- Attacker might have used an email address to login a social media. Can you tell us the email address?
+
+Dump the msedge.exe process.
+```ruby
+.\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin --profile=Win7SP1x64 memdump --pid=2380 --dump-dir=C:/Users/Nurimy/Desktop/
+```
+
+Now open the file with notepad and filter with CTRL+F for "mafia".
+
+### Task 17
+- Using MS Edge browser, the victim searched about a SIEM solution. What is the SIEM solution's name?
+
+With the consoles plugin we can see that the user downloaded so if we take a look we'll see a siem instalation.
+
+```ruby
+.\volatility2.6.exe -f C:\Users\Nurimy\Downloads\recollection.bin --profile=Win7SP1x64 consoles
+```
+### Task 18
+- The victim user downloaded an exe file. The file's name was mimicking a legitimate binary from Microsoft with a typo (i.e. legitimate binary is powershell.exe and attacker named a malware as powershall.exe). Tell us the file name with the file extension?
+
+Just before the siem executable there is another executable trying to impersonate a microsoft executable with an additional "s".
