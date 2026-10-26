@@ -209,3 +209,7 @@ table tbody tr {
 table tbody tr td {
 	padding: 0.5rem 1.5rem 0.5rem 0;
 }
+article strong,
+article b {
+	color: var(--primary);
+}
