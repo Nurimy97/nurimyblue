@@ -81,11 +81,11 @@ The response is the **client address** from the task 1 event.
 
 Look for **Event ID 4104** ( PowerShell Script Block Logging )  in the Powershell Operational logs. Taking a quick peek we can see that there is a PowerShell session launched with execution **policy bypass**  which is used to execute binary files without restrictions.
 
-<img src="/img/campfire-1/epbypass.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/epbypass.webp" width="800" />
 
 A couple of seconds later, the next log uses a **.ps1** file to perform active directory enumeration.
 
-<img src="/img/campfire-1/ps1.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/ps1.webp" width="800" />
 
 <details>
 <summary><b>Response: click to reveal</b></summary>
@@ -119,11 +119,11 @@ First we must parse the prefetch files with **Eric Zimmerman's PECmd** to conver
 
 Once inside Timeline explorer filter by the date of the incident in the last run field:
 
-<img src="/img/campfire-1/last_run_filter.webp" width="400" />
+<img src="/nurimyblue/img/campfire-1/last_run_filter.webp" width="400" />
 
 After the filter is applied, there are the half of the events so its easier to find what we're looking for. Now **after powershell** there is a well known tool used to perform kerberoasting, Rubeus.exe.
 
-<img src="/img/campfire-1/adtool.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/adtool.webp" width="800" />
 
 
 <details>
@@ -186,11 +186,11 @@ Analysis
 2. **Enumeration (PowerShell logs)**: The PowerShell-Operational log shows that, after an execution policy bypass (powershell -ep bypass), powerview.ps1 was loaded in a new PowerShell process at 03:16:32 UTC and its Active Directory enumeration code was running by 03:17:25 UTC. The full chain is detailed in the PowerShell subsection below.
 3. **Attack tool (Prefetch)**: Parsing the Prefetch files with PECmd and reviewing the output in Timeline Explorer identified C:\Users\Alonzo.spire\Downloads\Rubeus.exe, last run at 03:18:08 UTC, one second before the ticket request was logged on the Domain Controller.
 
-<img src="/img/campfire-1/ticket_requested.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/ticket_requested.webp" width="800" />
 
 *Figure 1 (Domain Controller, Event 4769): A Kerberos service ticket for MSSQLService is requested from 172.17.79.129 with RC4 (0x17) at 03:18:09 UTC.*
 
-<img src="/img/campfire-1/rubeus_timeline.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/rubeus_timeline.webp" width="800" />
 
 *Figure 2: Prefetch (parsed with PECmd, viewed in Timeline Explorer) shows RUBEUS.EXE executed once, with last run at 03:18:08 UTC and no previous runs.*
 
@@ -206,9 +206,9 @@ Analysis
 
 Event 53504 (PowerShell Named Pipe IPC, record 132) was logged for process 7268 at 03:16:00.78 under user SID `S-1-5-21-3239415629-1862073780-2394361899-1104 (FORELA\alonzo.spire)`. This event is written when a PowerShell process starts, so it marks the opening of the console session in which the following events occurred.
 
-<img src="/img/campfire-1/7268pshload.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/7268pshload.webp" width="800" />
 
-<img src="/img/campfire-1/7268xml.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/7268xml.webp" width="800" />
 
 *Figure 3: PowerShell process 7268 starts under the account `alonzo.spire`.*
 
@@ -216,9 +216,9 @@ Event 53504 (PowerShell Named Pipe IPC, record 132) was logged for process 7268 
 
 Eleven seconds later, Event 4100 (Executing Pipeline, record 134) shows an attempt to load `C:\Users\alonzo.spire\Downloads\powerview.ps1` failing with the error "running scripts is disabled on this system" (`UnauthorizedAccess`). The event shows the host as `ConsoleHost` running `powershell.exe` (version 5.1.19041.4170) in process 7268, with the user `FORELA\alonzo.spire` and no connected user. This indicates a local interactive console, not a PowerShell remoting session.
 
-<img src="/img/campfire-1/epbypass_attempt.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/epbypass_attempt.webp" width="800" />
 
-<img src="/img/campfire-1/epbypass_attempt_xml.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/epbypass_attempt_xml.webp" width="800" />
 
 *Figure 4: The execution policy blocks `powerview.ps1` in process 7268.*
 
@@ -226,9 +226,9 @@ Eleven seconds later, Event 4100 (Executing Pipeline, record 134) shows an attem
 
 At 03:16:29, Event 4104 (Script Block Logging, record 135) recorded the command `powershell -ep bypass` (`-ep` is the short form of `-ExecutionPolicy`). It has an empty `Path`, meaning it was typed in the console and not run from a script file. It was logged by process **7268** on thread **9220**, the same process and thread as the blocked attempt in Step 2, 18 seconds after it.
 
-<img src="/img/campfire-1/epbypass.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/epbypass.webp" width="800" />
 
-<img src="/img/campfire-1/epbypass_xml.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/epbypass_xml.webp" width="800" />
 
 *Figure 5: The bypass command is entered in the same console that was blocked in Figure 4.*
 
@@ -236,9 +236,9 @@ At 03:16:29, Event 4104 (Script Block Logging, record 135) recorded the command 
 
 One second after the bypass command, Event 53504 (record 137) shows a new PowerShell process, **9200**, starting under the same user SID at 03:16:30.16. This is consistent with the `powershell -ep` bypass command launching a new PowerShell instance without the execution policy restriction.
 
-<img src="/img/campfire-1/9200pshload.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/9200pshload.webp" width="800" />
 
-<img src="/img/campfire-1/9200pshload_xml.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/9200pshload_xml.webp" width="800" />
 
 *Figure 6: PowerShell process 9200 starts under the same account one second after the bypass.*
 
@@ -246,7 +246,7 @@ One second after the bypass command, Event 53504 (record 137) shows a new PowerS
 
 Starting at 03:16:32, Event 4104 recorded the full text of `C:\Users\alonzo.spire\Downloads\powerview.ps1` in process **9200**. The script header identifies it as PowerSploit's PowerView (`PowerSploit File: PowerView.ps1`). PowerShell split the script into **20 chunks** (`MessageTotal 20`) that share one `ScriptBlockId` (`e90ab1bc-fef9-43b2-bf1c-9e9a265c7f24`), so this is a single script load and not 20 separate actions. This is the script named in the investigation as the tool used to enumerate Active Directory objects.
 
-<img src="/img/campfire-1/powerview_chunk1_xml.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/powerview_chunk1_xml.webp" width="800" />
 
 *Figure 7: `powerview.ps1` is loaded from the Downloads folder in process 9200.*
 
@@ -254,9 +254,9 @@ Starting at 03:16:32, Event 4104 recorded the full text of `C:\Users\alonzo.spir
 
 At 03:17:25, two 4104 events from process 9200 (records 165 and 166, both with `Path = ...\powerview.ps1`) show PowerView's own code running: a loop that calls `Convert-LDAPProperty` on each LDAP search result (record 165), and the body of that function, which converts attributes such as `objectsid`, `objectguid`, `lastlogon` and `pwdlastset` into readable values (record 166). This code runs when a PowerView enumeration function returns results from Active Directory, so it shows that LDAP queries were being executed and their results processed at this time.
 
-<img src="/img/campfire-1/powerview_ldap_loop.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/powerview_ldap_loop.webp" width="800" />
 
-<img src="/img/campfire-1/powerview_ldap_conversion_xml.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/powerview_ldap_conversion_xml.webp" width="800" />
 
 *Figure 8: PowerView's LDAP result-processing code is executing in process 9200.*
 
@@ -266,9 +266,9 @@ At 03:17:25, two 4104 events from process 9200 (records 165 and 166, both with `
 
 Prefetch parsed with PECmd (viewed in Timeline Explorer) contains an entry for `RUBEUS.EXE` with a **run count of 1**, a **last run time of 03:18:08 UTC** and no previous run times. The files loaded by the process reference `C:\Users\Alonzo.spire\Downloads\Rubeus.exe`, the same Downloads folder from which `powerview.ps1` was loaded. Rubeus is a public tool used, among other things, to request Kerberos tickets for Kerberoasting.
 
-<img src="/img/campfire-1/rubeus_timeline.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/rubeus_timeline.webp" width="800" />
 
-<img src="/img/campfire-1/pecmd_filtered.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/pecmd_filtered.webp" width="800" />
 
 *Figure 9: Prefetch shows `Rubeus.exe` executed once from the user's Downloads folder at 03:18:08 UTC.*
 
@@ -282,9 +282,9 @@ This activity does not appear in the PowerShell logs because Script Block Loggin
 
 One second after Rubeus ran, the Domain Controller logged Event 4769 (A Kerberos service ticket was requested) for the service **MSSQLService** with Ticket Encryption Type **0x17 (RC4)**, originating from **172.17.79.129**, the same workstation. The event was found by filtering the Security log by Event ID 4769 and searching for `0x17`. RC4 is a legacy encryption type that is much faster to crack than AES, and attackers prefer to request it for offline cracking (Kerberoasting).
 
-<img src="/img/campfire-1/ticket_requested.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/ticket_requested.webp" width="800" />
 
-<img src="/img/campfire-1/ticket_requested_xml.webp" width="800" />
+<img src="/nurimyblue/img/campfire-1/ticket_requested_xml.webp" width="800" />
 
 *Figure 10: The Domain Controller logs the RC4 service ticket request for `MSSQLService`.*
 
