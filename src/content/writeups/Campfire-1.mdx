@@ -38,7 +38,7 @@ You are provided with:
 
 In a Kerberoasting attack the attacker requests a service ticket and cracks it offline. RC4 is a legacy encryption type, and attackers prefer it because it's much easier to crack than AES, which is the default. So filter by **Event ID 4769** ( A Kerberos service ticket was requested ) and use **Find..** to search for **0x17** ( RC4 ) in the **Ticket Encryption Type**. Ignore machine accounts (names ending in `$`) and focus on the one that targets a service account.
 
-<img src="/img/campfire-1/ticket_requested.webp" width="800" />
+<img src="/NurimyBlue/img/campfire-1/ticket_requested.webp" width="800" />
 
 <details>
 <summary><b>Response: click to reveal</b></summary>
