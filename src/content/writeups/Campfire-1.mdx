@@ -38,7 +38,7 @@ You are provided with:
 
 In a Kerberoasting attack the attacker requests a service ticket and cracks it offline. RC4 is a legacy encryption type, and attackers prefer it because it's much easier to crack than AES, which is the default. So filter by **Event ID 4769** ( A Kerberos service ticket was requested ) and use **Find..** to search for **0x17** ( RC4 ) in the **Ticket Encryption Type**. Ignore machine accounts (names ending in `$`) and focus on the one that targets a service account.
 
-<img src="../../../public/img/campfire-1/4769.webp" width="800" />
+<img src="/img/campfire-1/ticket_requested.webp" width="800" />
 
 <details>
 <summary><b>Response: click to reveal</b></summary>
@@ -81,11 +81,11 @@ The response is the **client address** from the task 1 event.
 
 Look for **Event ID 4104** ( PowerShell Script Block Logging )  in the Powershell Operational logs. Taking a quick peek we can see that there is a PowerShell session launched with execution **policy bypass**  which is used to execute binary files without restrictions.
 
-<img src="../../../public/img/campfire-1/epbypass.webp" width="800" />
+<img src="/img/campfire-1/epbypass.webp" width="800" />
 
 A couple of seconds later, the next log uses a **.ps1** file to perform active directory enumeration.
 
-<img src="../../../public/img/campfire-1/ps1.webp" width="800" />
+<img src="/img/campfire-1/ps1.webp" width="800" />
 
 <details>
 <summary><b>Response: click to reveal</b></summary>
@@ -119,11 +119,11 @@ First we must parse the prefetch files with **Eric Zimmerman's PECmd** to conver
 
 Once inside Timeline explorer filter by the date of the incident in the last run field:
 
-<img src="../../../public/img/campfire-1/last_run_filter.webp" width="400" />
+<img src="/img/campfire-1/last_run_filter.webp" width="400" />
 
 After the filter is applied, there are the half of the events so its easier to find what we're looking for. Now **after powershell** there is a well known tool used to perform kerberoasting, Rubeus.exe.
 
-<img src="../../../public/img/campfire-1/adtool.webp" width="800" />
+<img src="/img/campfire-1/adtool.webp" width="800" />
 
 
 <details>
@@ -147,5 +147,241 @@ Look for the **last run** of the executable from task 6.
 ```
 </details>
 ***
+## Executive Summary
 
+- **Incident ID:** INC-2026-0412
+- **Incident Title:** Domain Credential Dumping and Exfiltracion
+- **Severity Level:** HIGH
+- **Incident Status:** Active
+- **Detection Date/Time:** 2026-10-19 08:30:00 UTC
+- **Incident Overview:** On 2024-05-21, a Kerberoasting attack was carried out from the workstation of a user named Alonzo (172.17.79.129), under his account. The logs do not show whether Alonzo himself or someone else using his session was responsible. The activity first mapped the Active Directory environment with a PowerShell enumeration script and then used a dedicated tool to request a Kerberos service ticket for the service account MSSQLService. Such a ticket can be cracked offline to recover the account's password. The activity was detected after the user noticed unusual files on his computer and alerted the SOC team, whose analysis of Domain Controller, PowerShell and Prefetch evidence confirmed the attack.
+- **Key Findings**: 
+  - The attack began at 03:16 UTC, when a PowerShell console was opened under the account alonzo.spire on workstation 172.17.79.129. An attempt to run powerview.ps1 was blocked by the execution policy and bypassed within 18 seconds. PowerView was then loaded and run (03:16:32), followed by the Kerberoasting tool Rubeus.exe (03:18:08).
+  - The Domain Controller logged a Kerberos service ticket request for MSSQLService at 03:18:09 UTC from the same workstation, using weak RC4 encryption (0x17), a typical Kerberoasting indicator.
+  - The evidence proves the ticket was requested. It does not show whether the ticket was cracked or whether the account was subsequently abused.
+  - The initial access vector (how the tools reached the workstation) was not determined from the available evidence.
 
+- **Immediate Actions**: The SOC team collected Security logs from the Domain Controller and PowerShell-Operational logs and Prefetch files from the affected workstation, and analyzed them to confirm the attack.
+- **Stakeholder Impact**:
+    - **Internal Teams**: The MSSQLService account is potentially compromised, which may expose the services and data it has access to.
+    - **Employees**: The user's workstation was used to run attack tooling.
+    - **Customers / Business Partners / Regulatory Bodies**: No impact identified in the available evidence.
+***
+## Technical Analysis 
+Affected Systems & Data
+- **Workstation (172.17.79.129)**: Alonzo's endpoint, source of the enumeration and Kerberoasting activity.
+- **Domain Controller**: Processed the service ticket request and provided the Security logs.
+- **MSSQLService**: Targeted service account.
+- **Data access or exfiltration**: no evidence was found in the available logs.
+
+Evidence Sources & Analysis
+
+- Security logs from the Domain Controller (Security.evtx)
+- PowerShell-Operational logs from the affected workstation (SECURITY-DC.evtx)
+- Prefetch files from the affected workstation
+
+Analysis
+
+1. **Detection of the attack (Domain Controller)**: Filtering the Security log by Event ID 4769 (A Kerberos service ticket was requested) and searching for Ticket Encryption Type 0x17 (RC4) revealed a request at 2024-05-21 03:18:09 UTC for the service MSSQLService, originating from 172.17.79.129. RC4 is a legacy encryption type that attackers prefer because it is much easier to crack than AES.
+2. **Enumeration (PowerShell logs)**: The PowerShell-Operational log shows that, after an execution policy bypass (powershell -ep bypass), powerview.ps1 was loaded in a new PowerShell process at 03:16:32 UTC and its Active Directory enumeration code was running by 03:17:25 UTC. The full chain is detailed in the PowerShell subsection below.
+3. **Attack tool (Prefetch)**: Parsing the Prefetch files with PECmd and reviewing the output in Timeline Explorer identified C:\Users\Alonzo.spire\Downloads\Rubeus.exe, last run at 03:18:08 UTC, one second before the ticket request was logged on the Domain Controller.
+
+<img src="/img/campfire-1/ticket_requested.webp" width="800" />
+
+*Figure 1 (Domain Controller, Event 4769): A Kerberos service ticket for MSSQLService is requested from 172.17.79.129 with RC4 (0x17) at 03:18:09 UTC.*
+
+<img src="/img/campfire-1/rubeus_timeline.webp" width="800" />
+
+*Figure 2: Prefetch (parsed with PECmd, viewed in Timeline Explorer) shows RUBEUS.EXE executed once, with last run at 03:18:08 UTC and no previous runs.*
+
+***
+
+**PowerShell activity on Forela-Wkstn001**
+
+**Evidence source**: `Microsoft-Windows-PowerShell/Operational` log from `Forela-Wkstn001.forela.local`. All times are UTC, 2024-05-21.
+
+**Finding**: At 03:16:00 the user FORELA\alonzo.spire opened a PowerShell console, tried to run powerview.ps1 from the Downloads folder, was blocked by the execution policy, bypassed it within 18 seconds, and ran PowerView in a new PowerShell process. By 03:17:25 PowerView was processing Active Directory query results.
+
+**Step 1: PowerShell console opened (03:16:00)**
+
+Event 53504 (PowerShell Named Pipe IPC, record 132) was logged for process 7268 at 03:16:00.78 under user SID `S-1-5-21-3239415629-1862073780-2394361899-1104 (FORELA\alonzo.spire)`. This event is written when a PowerShell process starts, so it marks the opening of the console session in which the following events occurred.
+
+<img src="/img/campfire-1/7268pshload.webp" width="800" />
+
+<img src="/img/campfire-1/7268xml.webp" width="800" />
+
+*Figure 3: PowerShell process 7268 starts under the account `alonzo.spire`.*
+
+**Step 2: First attempt to run PowerView is blocked (03:16:11)**
+
+Eleven seconds later, Event 4100 (Executing Pipeline, record 134) shows an attempt to load `C:\Users\alonzo.spire\Downloads\powerview.ps1` failing with the error "running scripts is disabled on this system" (`UnauthorizedAccess`). The event shows the host as `ConsoleHost` running `powershell.exe` (version 5.1.19041.4170) in process 7268, with the user `FORELA\alonzo.spire` and no connected user. This indicates a local interactive console, not a PowerShell remoting session.
+
+<img src="/img/campfire-1/epbypass_attempt.webp" width="800" />
+
+<img src="/img/campfire-1/epbypass_attempt_xml.webp" width="800" />
+
+*Figure 4: The execution policy blocks `powerview.ps1` in process 7268.*
+
+**Step 3: Execution policy bypass (03:16:29)**
+
+At 03:16:29, Event 4104 (Script Block Logging, record 135) recorded the command `powershell -ep bypass` (`-ep` is the short form of `-ExecutionPolicy`). It has an empty `Path`, meaning it was typed in the console and not run from a script file. It was logged by process **7268** on thread **9220**, the same process and thread as the blocked attempt in Step 2, 18 seconds after it.
+
+<img src="/img/campfire-1/epbypass.webp" width="800" />
+
+<img src="/img/campfire-1/epbypass_xml.webp" width="800" />
+
+*Figure 5: The bypass command is entered in the same console that was blocked in Figure 4.*
+
+**Step 4: New PowerShell process starts (03:16:30)**
+
+One second after the bypass command, Event 53504 (record 137) shows a new PowerShell process, **9200**, starting under the same user SID at 03:16:30.16. This is consistent with the `powershell -ep` bypass command launching a new PowerShell instance without the execution policy restriction.
+
+<img src="/img/campfire-1/9200pshload.webp" width="800" />
+
+<img src="/img/campfire-1/9200pshload_xml.webp" width="800" />
+
+*Figure 6: PowerShell process 9200 starts under the same account one second after the bypass.*
+
+**Step 5: PowerView is loaded (03:16:32)**
+
+Starting at 03:16:32, Event 4104 recorded the full text of `C:\Users\alonzo.spire\Downloads\powerview.ps1` in process **9200**. The script header identifies it as PowerSploit's PowerView (`PowerSploit File: PowerView.ps1`). PowerShell split the script into **20 chunks** (`MessageTotal 20`) that share one `ScriptBlockId` (`e90ab1bc-fef9-43b2-bf1c-9e9a265c7f24`), so this is a single script load and not 20 separate actions. This is the script named in the investigation as the tool used to enumerate Active Directory objects.
+
+<img src="/img/campfire-1/powerview_chunk1_xml.webp" width="800" />
+
+*Figure 7: `powerview.ps1` is loaded from the Downloads folder in process 9200.*
+
+**Step 6: PowerView enumerates Active Directory (03:17:25)**
+
+At 03:17:25, two 4104 events from process 9200 (records 165 and 166, both with `Path = ...\powerview.ps1`) show PowerView's own code running: a loop that calls `Convert-LDAPProperty` on each LDAP search result (record 165), and the body of that function, which converts attributes such as `objectsid`, `objectguid`, `lastlogon` and `pwdlastset` into readable values (record 166). This code runs when a PowerView enumeration function returns results from Active Directory, so it shows that LDAP queries were being executed and their results processed at this time.
+
+<img src="/img/campfire-1/powerview_ldap_loop.webp" width="800" />
+
+<img src="/img/campfire-1/powerview_ldap_conversion_xml.webp" width="800" />
+
+*Figure 8: PowerView's LDAP result-processing code is executing in process 9200.*
+
+**Rubeus execution (Prefetch)**
+
+**Step 7: Kerberoasting tool executed (03:18:08)**
+
+Prefetch parsed with PECmd (viewed in Timeline Explorer) contains an entry for `RUBEUS.EXE` with a **run count of 1**, a **last run time of 03:18:08 UTC** and no previous run times. The files loaded by the process reference `C:\Users\Alonzo.spire\Downloads\Rubeus.exe`, the same Downloads folder from which `powerview.ps1` was loaded. Rubeus is a public tool used, among other things, to request Kerberos tickets for Kerberoasting.
+
+<img src="/img/campfire-1/rubeus_timeline.webp" width="800" />
+
+<img src="/img/campfire-1/pecmd_filtered.webp" width="800" />
+
+*Figure 9: Prefetch shows `Rubeus.exe` executed once from the user's Downloads folder at 03:18:08 UTC.*
+
+This activity does not appear in the PowerShell logs because Script Block Logging records PowerShell script text and not other executables launched from the console. Prefetch does not record command-line arguments, so the specific Rubeus command used cannot be determined.
+
+*** 
+
+**Kerberos ticket request (Domain Controller)**
+
+**Step 8: Service ticket requested for MSSQLService (03:18:09)**
+
+One second after Rubeus ran, the Domain Controller logged Event 4769 (A Kerberos service ticket was requested) for the service **MSSQLService** with Ticket Encryption Type **0x17 (RC4)**, originating from **172.17.79.129**, the same workstation. The event was found by filtering the Security log by Event ID 4769 and searching for `0x17`. RC4 is a legacy encryption type that is much faster to crack than AES, and attackers prefer to request it for offline cracking (Kerberoasting).
+
+<img src="/img/campfire-1/ticket_requested.webp" width="800" />
+
+<img src="/img/campfire-1/ticket_requested_xml.webp" width="800" />
+
+*Figure 10: The Domain Controller logs the RC4 service ticket request for `MSSQLService`.*
+
+**Correlation**. The Rubeus execution (03:18:08) and the ticket request (03:18:09) are one second apart and come from the same workstation. This strongly suggests that Rubeus made the request, but no log directly links the two, because Prefetch does not record what the process did.
+
+***
+
+**Limitations and other activity reviewed**
+
+- **The exact enumeration command was not captured**. No Event 4104 with an empty `Path` and a readable command was found after the PowerView load, so the specific function called and the objects queried cannot be determined from this log. The enumeration itself is supported by Step 6. The later Kerberoasting activity against `MSSQLService` (03:18:09) is consistent with the enumeration having identified Kerberoastable accounts, but the logs do not show this directly.
+- **The Rubeus command line was not captured**. The action Rubeus performed is inferred from the 4769 event, not observed directly.
+- **The evidence shows the ticket was requested**. It does not show whether the ticket was cracked or whether the account was subsequently used.
+- **Earlier PowerShell processes**. PowerShell started under the SYSTEM account at 03:12:56 (process 8248) and again at 03:12:58. No script block activity was found for them, and they are not considered related to the attack.
+
+**Indicators of Compromise (IoCs)**
+- **Attacker IP Addresses**: 172.17.79.129 (Internal, compromised workstation)
+- **Malicious File Hashes (SHA256)**: Not available in the provided evidence. Recommended: hash Rubeus.exe and powerview.ps1 from the workstation
+- **Malicious Domains/URLs**: None identified
+- **Registry Keys**: None identified
+- **Malicious Files**: C:\Users\Alonzo.spire\Downloads\Rubeus.exe, C:\Users\alonzo.spire\Downloads\powerview.ps1
+- **Suspicious Commands**: powershell -ep bypass
+- **PowerShell Script Block ID (PowerView load)**: e90ab1bc-fef9-43b2-bf1c-9e9a265c7f24
+- **Detection Artifacts**: Event ID 4769 with Ticket Encryption Type 0x17 for MSSQLService; Event ID 4104 containing PowerView script blocks (source file powerview.ps1) and the command powershell -ep bypass
+
+**Root Cause Analysis**
+- The **initial access vector was not determined** from the available evidence. It is not known how the tools reached the workstation or who was operating the user's session (the user himself or someone else using his account).
+- **Contributing factors** that made the attack possible or more effective:
+  - The service account was Kerberoastable (it has an SPN), and RC4 tickets could be requested for it, making offline cracking faster.
+  - A PowerShell execution policy bypass and the execution of known offensive tooling were not blocked on the endpoint.
+  - Any authenticated domain user can request service tickets for accounts with SPNs, so a single compromised workstation was enough to start the attack.
+
+**Nature of the Attack (TTPs)**
+
+|**Tactic**|**Technique**|**Evidence**|
+|---|---|---|
+|Execution|T1059.001: Command and Scripting Interpreter: PowerShell|Interactive PowerShell use, execution policy bypass (`powershell -ep bypass`) and script execution in PIDs 7268 and 9200|
+|Discovery|T1087.002: Account Discovery: Domain Account|PowerView loaded (03:16:32) and its LDAP result-processing code executed (03:17:25)|
+|Credential Access|T1558.003: Steal or Forge Kerberos Tickets: Kerberoasting|Rubeus.exe execution and RC4 service ticket request for MSSQLService|
+
+The observed activity followed a typical Kerberoasting workflow: enumerate the domain with PowerView to find accounts with SPNs, then use Rubeus to request their service tickets for offline cracking. Both are well-known public tools.
+
+***
+**Response and Recovery Analysis**
+
+**Immediate Response Actions**
+
+- **Revocation of Access**: No revocation actions are documented in the available evidence.
+  *Recommended:* reset the password of `MSSQLService` immediately, since a ticket encrypted with
+  its key was requested and its password could be cracked offline. Also reset the password of
+  `alonzo.spire` and terminate his active sessions, as his account was used to run the tools.
+- **Containment Strategy**: Triage data was collected from the workstation at around 03:30 UTC,
+  according to the triage folder name. No network containment is documented.
+  *Recommended:* isolate 172.17.79.129 from the network (for example with EDR network containment)
+  while preserving evidence.
+
+  **Eradication Measures**
+
+- **Malware Removal**: *Recommended:* after preserving copies and hashes as evidence, remove
+  `Rubeus.exe` and `powerview.ps1` from the user's Downloads folder, and check for persistence
+  (scheduled tasks, services, Run keys). No persistence was identified in the available evidence.
+  If compromise of the workstation cannot be ruled out, reimage it.
+- **System Patching**: Not applicable. No software vulnerability was exploited in the evidence.
+
+**Recovery Steps**
+
+- **Data Restoration**: Not applicable. No data loss or destruction was identified.
+- **System Validation**: *Recommended:* verify the workstation is clean (or reimaged) before returning
+  it to the network, confirm that `MSSQLService` was rotated and its dependent applications updated,
+  and monitor `MSSQLService` and `alonzo.spire` for anomalous authentication (Events 4624, 4768,
+  4769) for a defined period.
+
+**Post-Incident Actions**
+
+- **Monitoring**: Alert on Event ID 4769 with Ticket Encryption Type `0x17`, especially for service accounts, and on PowerView-related content in Event ID 4104.
+- **Lessons Learned**: Script Block Logging and Prefetch made it possible to reconstruct the attack.
+  - Reset the **MSSQLService** password immediately and use a long, random one (20+ characters), or migrate to a **gMSA**.
+  - Enforce **AES** for Kerberos and disable RC4 where possible.
+  - Investigate the initial access vector on the workstation.
+  - Restrict PowerShell (Constrained Language Mode, application control) and block known offensive tooling with EDR or AppLocker.
+  - Review the privileges of MSSQLService to apply least privilege
+
+***
+
+**Annex / Appendices**
+
+**Annex A: Detailed Technical Timeline**
+
+All times in UTC, 2024-05-21.
+
+|**Timestamp**|**Activity**|
+|---|---|
+|`2024-05-21 03:16:00`|PowerShell console (PID 7268) started by `alonzo.spire` (Event 53504, record 132)|
+|`2024-05-21 03:16:11`|`powerview.ps1` blocked by the execution policy (Event 4100, record 134)|
+|`2024-05-21 03:16:29`|`powershell -ep bypass` entered in PID 7268 (Event 4104, record 135)|
+|`2024-05-21 03:16:30`|New PowerShell process PID 9200 started under the same account (Event 53504, record 137)|
+|`2024-05-21 03:16:32`|`C:\Users\alonzo.spire\Downloads\powerview.ps1` loaded in PID 9200 (Event 4104, 20 chunks)|
+|`2024-05-21 03:17:25`|PowerView processing AD LDAP query results in PID 9200 (Events 4104, records 165 and 166)|
+|`2024-05-21 03:18:08`|`Rubeus.exe` executed from `C:\Users\Alonzo.spire\Downloads\`|
+|`2024-05-21 03:18:09`|Domain Controller logs Event ID 4769: service ticket requested for `MSSQLService` with RC4 (`0x17`) from 172.17.79.129|
+|`~2024-05-21 03:30`|Triage data collected from the workstation (based on the triage folder name)|
