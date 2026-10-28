@@ -21,7 +21,7 @@ const {
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://nurimy97.github.io',
-	base: process.env.NODE_ENV === 'production' ? '/nurimyblue' : '/',
+	base: '/nurimyblue',
 	output: 'static',
 	integrations: [
 		expressiveCode({
